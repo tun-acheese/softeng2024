@@ -1,0 +1,28 @@
+ <!DOCTYPE html>
+<head>
+ <meta charset="UTF-8">
+ <script>
+ src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+ </head>
+ <body>
+ <form id="form_id" action="javascript:post_query()">
+     <input type="text" name="dan" value="7">
+         <button type="submit">Go</button>
+ </form>
+ <div id="results"></div>
+ <script>
+     function post_query() {
+     $.ajax({
+         type: "GET",
+         url: "http://127.0.0.1:5000/",
+         data: $("#form_id").serialize(),
+         success: update_result,
+         dataType: "html"
+     });
+ }
+     function update_result(data) {
+     $("#results").html(data);
+ }
+ </script>
+ </body>
+ </html>
