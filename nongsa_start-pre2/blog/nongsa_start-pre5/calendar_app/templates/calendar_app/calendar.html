@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2024년 일정 관리 캘린더</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .calendar-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-controls .arrow-button {
+            padding: 10px;
+            font-size: 20px;
+            margin: 0 10px;
+            cursor: pointer;
+            background-color: transparent;
+            border: none;
+        }
+
+        .calendar-controls button:hover {
+            color: #4CAF50;
+        }
+
+        .calendar-controls .year-button {
+            font-size: 30px;
+        }
+
+        .calendar-controls .month-button {
+            font-size: 20px;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-gap: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .calendar .day,
+        .calendar .day-name {
+            padding: 20px;
+            border-radius: 5px;
+        }
+
+        .calendar .day-name {
+            font-weight: bold;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .calendar .day {
+            background-color: #f0f0f0;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .calendar .day:hover {
+            background-color: #d1f7d1;
+        }
+
+        .calendar .day .memo-list {
+            margin-top: 10px;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .calendar .day .memo-item {
+            background-color: #e7f7e7;
+            margin: 2px 0;
+            padding: 5px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .calendar .day input {
+            margin-top: 5px;
+            width: 90%;
+            padding: 5px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .holiday-bar {
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background-color: #ff7f50;
+        }
+
+        .holiday-bar.start {
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+
+        .holiday-bar.end {
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+        .memo-item button {
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .memo-item button:hover {
+            background-color: darkred;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>2024년 일정 관리 캘린더</h1>
+    <div class="calendar-controls">
+        <!-- Year Control Buttons (화살표로 년도 변경) -->
+        <button class="arrow-button year-button" onclick="changeYear(-1)">&#9664;</button>
+        <div id="currentMonthYear" style="font-size: 20px; margin: 0 20px;"></div>
+        <button class="arrow-button year-button" onclick="changeYear(1)">&#9654;</button>
+
+        <!-- Month Control Buttons (화살표로 달 변경) -->
+        <button class="arrow-button month-button" onclick="changeMonth(-1)">&#8592;</button>
+        <button class="arrow-button month-button" onclick="changeMonth(1)">&#8594;</button>
+    </div>
+    <div class="calendar" id="calendar"></div>
+</div>
+
+<script>
+    let currentYear = 2024;
+    let currentMonth = 0;
+    let events = {};
+    let holidays = [
+        { name: '추석', start: '2024-09-15', end: '2024-09-17' },
+        { name: '설날', start: '2024-02-09', end: '2024-02-11' },
+        { name: '대체공휴일', start: '2024-05-05', end: '2024-05-07' }
+    ];
+
+    function generateCalendar() {
+        const calendar = document.getElementById('calendar');
+        const currentMonthYear = document.getElementById('currentMonthYear');
+        const date = new Date(currentYear, currentMonth, 1);
+
+        const year = date.getFullYear();
+        const month = date.getMonth();
+
+        currentMonthYear.textContent = `${year}년 ${month + 1}월`;
+
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+
+        const startDay = firstDayOfMonth.getDay();
+        const endDay = lastDayOfMonth.getDate();
+
+        calendar.innerHTML = '';
+
+        const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+        daysOfWeek.forEach(day => {
+            const dayName = document.createElement('div');
+            dayName.className = 'day-name';
+            dayName.textContent = day;
+            calendar.appendChild(dayName);
+        });
+
+        for (let i = 0; i < startDay; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'day disabled';
+            calendar.appendChild(emptyCell);
+        }
+
+        for (let day = 1; day <= endDay; day++) {
+            const dayCell = document.createElement('div');
+            const formattedDate = `${year}-${month + 1}-${day < 10 ? '0' + day : day}`;
+            dayCell.className = 'day';
+            dayCell.innerHTML = ` 
+                ${day}
+                <div class="memo-list">
+                    ${(events[formattedDate] || []).map((memo, index) => `
+                        <div class="memo-item">
+                            ${memo}
+                            <button onclick="deleteMemo('${formattedDate}', ${index})">삭제</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <input type="text" placeholder="메모 추가" onkeypress="saveMemo(event, '${formattedDate}', this)">
+            `;
+
+            holidays.forEach(holiday => {
+                if (isWithinRange(formattedDate, holiday.start, holiday.end)) {
+                    const bar = document.createElement('div');
+                    bar.className = 'holiday-bar';
+                    if (formattedDate === holiday.start) bar.classList.add('start');
+                    if (formattedDate === holiday.end) bar.classList.add('end');
+                    dayCell.appendChild(bar);
+
+                    if (isMiddleDate(formattedDate, holiday.start, holiday.end)) {
+                        const memo = document.createElement('div');
+                        memo.className = 'memo-item';
+                        memo.textContent = holiday.name;
+                        dayCell.querySelector('.memo-list').appendChild(memo);
+                    }
+                }
+            });
+
+            dayCell.onclick = function () {
+                const input = dayCell.querySelector('input');
+                input.style.display = 'block';
+                input.focus();
+            };
+
+            calendar.appendChild(dayCell);
+        }
+    }
+
+    function saveMemo(event, date, input) {
+        if (event.key === 'Enter') {
+            const memo = input.value.trim();
+            if (memo) {
+                if (!events[date]) events[date] = [];
+                events[date].push(memo);
+                input.value = '';
+                generateCalendar();
+            }
+        }
+    }
+
+    function deleteMemo(date, index) {
+        if (events[date]) {
+            events[date].splice(index, 1);
+            generateCalendar();
+        }
+    }
+
+    function changeMonth(offset) {
+        currentMonth += offset;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        } else if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        generateCalendar();
+    }
+
+    function changeYear(offset) {
+        currentYear += offset;
+        generateCalendar();
+    }
+
+    function isWithinRange(date, start, end) {
+        const d = new Date(date);
+        return new Date(start) <= d && d <= new Date(end);
+    }
+
+    function isMiddleDate(date, start, end) {
+        const d = new Date(date);
+        const s = new Date(start);
+        const e = new Date(end);
+        return d > s && d < e;
+    }
+
+    generateCalendar();
+</script>
+</body>
+</html>
+
